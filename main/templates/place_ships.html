@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Placing</title>
+    <style>
+        table { border-collapse: collapse; }
+        td {
+            width: 30px; height: 30px;
+            border: 1px solid #000;
+            text-align: center;
+            cursor: pointer;
+        }
+        .ship { background-color: #444; }
+    </style>
+</head>
+<body>
+<h1>Selected your positions (max 10)</h1>
+
+{% if error %}
+<p style="color:red;">{{ error }}</p>
+{% endif %}
+
+<form method="post" id="boardForm" action="{% url 'save_ships' %}">
+    {% csrf_token %}
+    <table id="boardTable">
+        {% for y in range %}
+            <tr>
+                {% for x in range %}
+                <td data-x="{{ x }}" data-y="{{ y }}"></td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </table>
+
+    <input type="hidden" name="board" id="boardInput">
+    <p>Selected: <span id="count">0</span> / 10</p>
+    <button type="submit" id="submitBtn" disabled>Start</button>
+</form>
+
+<script>
+    const maxShips = 10;
+    const boardTable = document.getElementById('boardTable');
+    const boardInput = document.getElementById('boardInput');
+    const countSpan = document.getElementById('count');
+    const submitBtn = document.getElementById('submitBtn');
+
+    let shipCount = 0;
+    let board = [];
+    for(let y=0; y<10; y++) {
+        board[y] = [];
+        for(let x=0; x<10; x++) {
+            board[y][x] = '.';
+        }
+    }
+
+    boardTable.addEventListener('click', e => {
+        if(e.target.tagName !== 'TD') return;
+        const x = parseInt(e.target.getAttribute('data-x'));
+        const y = parseInt(e.target.getAttribute('data-y'));
+        if(board[y][x] === '.' && shipCount < maxShips) {
+            board[y][x] = 'S';
+            e.target.classList.add('ship');
+            shipCount++;
+        } else if (board[y][x] === 'S') {
+            board[y][x] = '.';
+            e.target.classList.remove('ship');
+            shipCount--;
+        }
+        countSpan.textContent = shipCount;
+        submitBtn.disabled = shipCount !== maxShips;
+    });
+
+    document.getElementById('boardForm').addEventListener('submit', e => {
+        boardInput.value = JSON.stringify(board);
+    });
+</script>
+</body>
+</html>

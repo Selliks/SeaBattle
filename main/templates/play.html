@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sea Battle</title>
+    <style>
+        table { border-collapse: collapse; margin: 10px; }
+        td {
+            width: 30px; height: 30px;
+            border: 1px solid #000;
+            text-align: center;
+            cursor: pointer;
+        }
+        .ship { background-color: #444; }
+        .hit { background-color: red; color: white; }
+        .miss { background-color: lightblue; }
+    </style>
+</head>
+<body>
+<h1>Game</h1>
+
+<h3>Your field</h3>
+<table id="playerBoard">
+    {% for y, row in player_board %}
+    <tr>
+    {% for x, cell in row %}
+        <td class="{% if cell == 'S' %}ship{% elif cell == 'X' %}hit{% elif cell == 'O' %}miss{% endif %}"></td>
+    {% endfor %}
+    </tr>
+{% endfor %}
+
+</table>
+
+
+<h3>Enemy field</h3>
+<table id="botBoard">
+    {% for y, row in bot_board %}
+    <tr>
+        {% for x, cell in row %}
+        <td data-x="{{ x }}" data-y="{{ y }}" class="{% if cell == 'X' %}hit{% elif cell == 'O' %}miss{% endif %}"></td>
+        {% endfor %}
+    </tr>
+    {% endfor %}
+</table>
+
+<p id="message"></p>
+
+<script>
+const botBoard = document.getElementById('botBoard');
+const message = document.getElementById('message');
+
+botBoard.addEventListener('click', e => {
+    if(e.target.tagName !== 'TD') return;
+
+    const x = e.target.getAttribute('data-x');
+    const y = e.target.getAttribute('data-y');
+
+    fetch(`/shot/?x=${x}&y=${y}`)
+        .then(res => res.json())
+        .then(data => {
+            if(data.hit === null) {
+                message.textContent = 'You already shot there!';
+                return;
+            }
+            if(data.hit) {
+                message.textContent = 'HIT!';
+                e.target.classList.add('hit');
+            } else {
+                message.textContent = 'MISS!';
+                e.target.classList.add('miss');
+            }
+
+            if(data.game_over) {
+                alert(data.result);
+                window.location.href = '/';
+                return;
+            }
+
+            fetch('/bot_shot/')
+                .then(res => res.json())
+                .then(data => {
+                    message.textContent += ` The Bot shot at (${data.x}, ${data.y}) - ${data.hit ? 'HIT!' : 'MISS!'}`;
+                    const playerCell = document.querySelectorAll('#playerBoard tr')[data.y].children[data.x];
+                    if(data.hit) playerCell.classList.add('hit');
+                    else playerCell.classList.add('miss');
+
+                    if(data.game_over) {
+                        alert(data.result);
+                        window.location.href = '/';
+                    }
+                });
+        });
+});
+</script>
