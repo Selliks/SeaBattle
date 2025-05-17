@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Гра</title>
+    <style>
+        table { border-collapse: collapse; }
+        td {
+            width: 30px; height: 30px;
+            border: 1px solid black;
+            text-align: center;
+            cursor: pointer;
+        }
+        .hit { background-color: red; }
+        .miss { background-color: lightblue; }
+    </style>
+</head>
+<body>
+    <h1>Твій хід</h1>
+    <table>
+        {% for y in bot_board %}
+        <tr>
+            {% for cell in y %}
+            <td data-x="{{ forloop.counter0 }}" data-y="{{ forloop.parentloop.counter0 }}">{{ cell }}</td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </table>
+
+<script>
+    document.querySelectorAll("td").forEach(cell => {
+        cell.addEventListener("click", () => {
+            const x = cell.getAttribute("data-x");
+            const y = cell.getAttribute("data-y");
+            fetch(`/shot/?x=${x}&y=${y}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.hit === true) {
+                        cell.classList.add("hit");
+                    } else if (data.hit === false) {
+                        cell.classList.add("miss");
+                    }
+                });
+        });
+    });
+</script>
+</body>
+</html>
